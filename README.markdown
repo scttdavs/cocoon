@@ -368,7 +368,8 @@ On insertion or removal the following events are triggered:
 To listen to the events in your JavaScript:
 
 ```javascript
-  $('#container').on('cocoon:before-insert', function(e, insertedItem) {
+  document.getElementById('#container').addEventListener('cocoon:before-insert', function(e) {
+    const insertedItem = e.detail.insertedItem;
     // ... do something
   });
 ```

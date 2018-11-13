@@ -1,4 +1,38 @@
-(function($) {
+(function() {
+
+  function hasClass(el, className) {
+    if (el.classList) {
+        el.classList.contains(className);
+    } else {
+        new RegExp('(^| )' + className + '( |$)', 'gi').test(el.className);
+    }
+  }
+
+  let matchesType;
+  if (typeof Element !== 'undefined') { // so we don't break Node-side loading of this
+      const types = [
+          "matches", "matchesSelector",
+          "webkitMatchesSelector", "mozMatchesSelector",
+          "msMatchesSelector", "oMatchesSelector"
+      ];
+      for (let i = 0; i < types.length; i++) {
+          const type = types[i];
+          if (Element.prototype[type]) {
+              matchesType = type;
+              break;
+          }
+      }
+  }
+
+  function matches(el, selector) {
+      return el[matchesType] && el[matchesType](selector);
+  }
+
+  function getNearest(el, selector) {
+    if (!el) return null;
+    if (matches(el, selector)) return el;
+    return getNearest(el.parentNode, selector);
+  }
 
   var cocoon_element_counter = 0;
 
@@ -14,39 +48,41 @@
     return '_' + id + '_$1';
   }
 
-  var getInsertionNodeElem = function(insertionNode, insertionTraversal, $this){
+  var getInsertionNodeElem = function(insertionNode, insertionTraversal, el){
 
     if (!insertionNode){
-      return $this.parent();
+      return el.parentNode;
     }
 
     if (typeof insertionNode == 'function'){
       if(insertionTraversal){
         console.warn('association-insertion-traversal is ignored, because association-insertion-node is given as a function.')
       }
-      return insertionNode($this);
+      return insertionNode(el);
     }
 
     if(typeof insertionNode == 'string'){
       if (insertionTraversal){
-        return $this[insertionTraversal](insertionNode);
+        return el[insertionTraversal](insertionNode);
       }else{
-        return insertionNode == "this" ? $this : $(insertionNode);
+        return insertionNode == "this" ? el : insertionNode;
       }
     }
 
   }
 
-  $(document).on('click', '.add_fields', function(e) {
+  document.addEventListener("click", function(e) {
+    const add_fields = getNearest(e.target, '.add_fields');
+    if (!add_fields) return;
+    
     e.preventDefault();
-    var $this                 = $(this),
-        assoc                 = $this.data('association'),
-        assocs                = $this.data('associations'),
-        content               = $this.data('association-insertion-template'),
-        insertionMethod       = $this.data('association-insertion-method') || $this.data('association-insertion-position') || 'before',
-        insertionNode         = $this.data('association-insertion-node'),
-        insertionTraversal    = $this.data('association-insertion-traversal'),
-        count                 = parseInt($this.data('count'), 10),
+
+    var assoc                 = add_fields.getAttribute('data-association'),
+        assocs                = add_fields.getAttribute('data-associations'),
+        content               = add_fields.getAttribute('data-association-insertion-template'),
+        insertionNode         = add_fields.getAttribute('data-association-insertion-node'),
+        insertionTraversal    = add_fields.getAttribute('data-association-insertion-traversal'),
+        count                 = parseInt(add_fields.getAttribute('count'), 10),
         regexp_braced         = new RegExp('\\[new_' + assoc + '\\](.*?\\s)', 'g'),
         regexp_underscord     = new RegExp('_new_' + assoc + '_(\\w*)', 'g'),
         new_id                = create_new_id(),
@@ -75,65 +111,84 @@
       count -= 1;
     }
 
-    var insertionNodeElem = getInsertionNodeElem(insertionNode, insertionTraversal, $this)
+    var insertionNodeElem = getInsertionNodeElem(insertionNode, insertionTraversal, add_fields)
 
     if( !insertionNodeElem || (insertionNodeElem.length == 0) ){
       console.warn("Couldn't find the element to insert the template. Make sure your `data-association-insertion-*` on `link_to_add_association` is correct.")
     }
 
-    $.each(new_contents, function(i, node) {
-      var contentNode = $(node);
+    new_contents.forEach(function(node, i) {
+      var contentNode = node;
 
-      var before_insert = jQuery.Event('cocoon:before-insert');
-      insertionNodeElem.trigger(before_insert, [contentNode]);
+      var before_insert = new CustomEvent('cocoon:before-insert', { insertedItem: contentNode });
+      insertionNodeElem.dispatchEvent(before_insert);
 
       if (!before_insert.isDefaultPrevented()) {
         // allow any of the jquery dom manipulation methods (after, before, append, prepend, etc)
         // to be called on the node.  allows the insertion node to be the parent of the inserted
         // code and doesn't force it to be a sibling like after/before does. default: 'before'
-        var addedContent = insertionNodeElem[insertionMethod](contentNode);
+        var parent = insertionNodeElem.parentNode;
+        parent.insertBefore(contentNode, insertionNodeElem);
 
-        insertionNodeElem.trigger('cocoon:after-insert', [contentNode]);
+        insertionNodeElem.dispatchEvent(new CustomEvent('cocoon:after-insert', { insertedItem: contentNode }));
       }
     });
+
   });
 
-  $(document).on('click', '.remove_fields.dynamic, .remove_fields.existing', function(e) {
-    var $this = $(this),
-        wrapper_class = $this.data('wrapper-class') || 'nested-fields',
-        node_to_delete = $this.closest('.' + wrapper_class),
-        trigger_node = node_to_delete.parent();
+  document.addEventListener("click", function(e) {
+    const remove_fields_dynamic = getNearest(e.target, '.remove_fields.dynamic');
+    const remove_fields_existing = getNearest(e.target, '.remove_fields.existing');
+
+    const clicked = remove_fields_dynamic || remove_fields_existing;
+
+    if (clicked) return;
+
+    var wrapper_class = clicked.getAttribute('wrapper-class') || 'nested-fields',
+        node_to_delete = getNearest(clicked, '.' + wrapper_class),
+        trigger_node = node_to_delete.parentNode;
 
     e.preventDefault();
 
-    var before_remove = jQuery.Event('cocoon:before-remove');
-    trigger_node.trigger(before_remove, [node_to_delete]);
+    var before_remove = new CustomEvent('cocoon:before-remove', { removedItem: node_to_delete });
+    trigger_node.dispatchEvent(before_remove);
 
     if (!before_remove.isDefaultPrevented()) {
-      var timeout = trigger_node.data('remove-timeout') || 0;
+      var timeout = trigger_node.getAttribute('data-remove-timeout') || 0;
 
       setTimeout(function() {
-        if ($this.hasClass('dynamic')) {
-            node_to_delete.detach();
+        if (hasClass(clicked, 'dynamic')) {
+          node_to_delete.parentNode.removeChild(node_to_delete);
         } else {
-            $this.prev("input[type=hidden]").val("1");
-            node_to_delete.hide();
+            var previous = clicked.previousElementSibling;
+            if (matches(previous, "input[type=hidden]")) {
+              previous.value = "1";
+            }
+            node_to_delete.style.display = "none";
         }
-        trigger_node.trigger('cocoon:after-remove', [node_to_delete]);
+        var after_remove = new CustomEvent('cocoon:after-remove', { removedItem: node_to_delete });
+        trigger_node.dispatchEvent(after_remove);
       }, timeout);
     }
   });
 
+  var ready = function () {
+    Array.prototype.slice.call(document.querySelectorAll('.remove_fields.existing.destroyed'))
+      .forEach(function(el, i) {
+        var wrapper_class = el.getAttribute('data-wrapper-class') || 'nested-fields';
 
-  $(document).on("ready page:load turbolinks:load", function() {
-    $('.remove_fields.existing.destroyed').each(function(i, obj) {
-      var $this = $(this),
-          wrapper_class = $this.data('wrapper-class') || 'nested-fields';
+        
+        var nearest = getNearest(el, '.' + wrapper_class);
+        if (nearest) nearest.style.display = "none";
+      });
+  };
 
-      $this.closest('.' + wrapper_class).hide();
-    });
-  });
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', ready);
+  } else {
+    ready();
+  }
 
-})(jQuery);
+})();
 
 
