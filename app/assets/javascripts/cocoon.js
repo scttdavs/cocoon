@@ -120,7 +120,7 @@
     new_contents.forEach(function(node, i) {
       var contentNode = node;
 
-      var before_insert = new CustomEvent('cocoon:before-insert', { insertedItem: contentNode });
+      var before_insert = new CustomEvent('cocoon:before-insert', { bubbles: true, detail: { insertedItem: contentNode } });
       console.log("C. BEFORE", insertionNodeElem, before_insert);
       insertionNodeElem.dispatchEvent(before_insert);
 
@@ -130,8 +130,8 @@
         // code and doesn't force it to be a sibling like after/before does. default: 'before'
         insertionNodeElem.insertAdjacentHTML('beforebegin', contentNode);
 
-        console.log("C. AFTER", insertionNodeElem, new CustomEvent('cocoon:after-insert', { insertedItem: contentNode }));
-        insertionNodeElem.dispatchEvent(new CustomEvent('cocoon:after-insert', { insertedItem: contentNode }));
+        console.log("C. AFTER", insertionNodeElem, new CustomEvent('cocoon:after-insert', { bubbles: true, detail: { insertedItem: contentNode } }));
+        insertionNodeElem.dispatchEvent(new CustomEvent('cocoon:after-insert', { bubbles: true, detail: { insertedItem: contentNode } }));
       }
     });
 
@@ -151,7 +151,7 @@
 
     e.preventDefault();
 
-    var before_remove = new CustomEvent('cocoon:before-remove', { removedItem: node_to_delete });
+    var before_remove = new CustomEvent('cocoon:before-remove', { bubbles: true, detail: { removedItem: node_to_delete } });
     trigger_node.dispatchEvent(before_remove);
 
     if (!before_remove.defaultPrevented) {
@@ -167,7 +167,7 @@
             }
             node_to_delete.style.display = "none";
         }
-        var after_remove = new CustomEvent('cocoon:after-remove', { removedItem: node_to_delete });
+        var after_remove = new CustomEvent('cocoon:after-remove', { bubbles: true, detail: { removedItem: node_to_delete } });
         trigger_node.dispatchEvent(after_remove);
       }, timeout);
     }
