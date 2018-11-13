@@ -123,7 +123,7 @@
       var before_insert = new CustomEvent('cocoon:before-insert', { insertedItem: contentNode });
       insertionNodeElem.dispatchEvent(before_insert);
 
-      if (!before_insert.isDefaultPrevented()) {
+      if (!before_insert.defaultPrevented) {
         // allow any of the jquery dom manipulation methods (after, before, append, prepend, etc)
         // to be called on the node.  allows the insertion node to be the parent of the inserted
         // code and doesn't force it to be a sibling like after/before does. default: 'before'
@@ -153,7 +153,7 @@
     var before_remove = new CustomEvent('cocoon:before-remove', { removedItem: node_to_delete });
     trigger_node.dispatchEvent(before_remove);
 
-    if (!before_remove.isDefaultPrevented()) {
+    if (!before_remove.defaultPrevented) {
       var timeout = trigger_node.getAttribute('data-remove-timeout') || 0;
 
       setTimeout(function() {
