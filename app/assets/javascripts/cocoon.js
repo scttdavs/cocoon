@@ -99,7 +99,7 @@
 
     var insertionNodeElem = getInsertionNodeElem(insertionNode, add_fields)
 
-    if (!insertionNodeElem) ){
+    if (!insertionNodeElem) {
       console.warn("Couldn't find the element to insert the template. Make sure your `data-association-insertion-*` on `link_to_add_association` is correct.")
     }
 
