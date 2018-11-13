@@ -392,38 +392,30 @@ This will either let you select an owner from the list of persons, or show the f
 The callbacks can be added as follows:
 
 ```javascript
-$(document).ready(function() {
-    $('#owner')
-      .on('cocoon:before-insert', function() {
-        $("#owner_from_list").hide();
-        $("#owner a.add_fields").hide();
-      })
-      .on('cocoon:after-insert', function() {
-        /* ... do something ... */
-      })
-      .on("cocoon:before-remove", function() {
-        $("#owner_from_list").show();
-        $("#owner a.add_fields").show();
-      })
-      .on("cocoon:after-remove", function() {
-        /* e.g. recalculate order of child items */
-      });
+const owner = document.getElementById('owner')
+owner.addEventListener('cocoon:before-insert', () => {
+  document.getElementById('owner_from_list').style.display = "none";
+  document.querySelector('#owner a.add_fields').style.display = "none";
+});
 
-    // example showing manipulating the inserted/removed item
+owner.addEventListener('cocoon:after-insert', e => {
+  const insertedItem = e.detail.insertedItem;
+  /* ... do something ... */
+});
 
-    $('#tasks')
-      .on('cocoon:before-insert', function(e,task_to_be_added) {
-        task_to_be_added.fadeIn('slow');
-      })
-      .on('cocoon:after-insert', function(e, added_task) {
-        // e.g. set the background of inserted task
-        added_task.css("background","red");
-      })
-      .on('cocoon:before-remove', function(e, task) {
-        // allow some time for the animation to complete
-        $(this).data('remove-timeout', 1000);
-        task.fadeOut('slow');
-      });
+owner.addEventListener('cocoon:after-insert', e => {
+  const insertedItem = e.detail.insertedItem;
+  /* ... do something ... */
+});
+
+owner.addEventListener('cocoon:before-remove', e => {
+  const removedItem = e.detail.removedItem;
+  /* ... do something ... */
+});
+
+owner.addEventListener('cocoon:after-remove', e => {
+  const removedItem = e.detail.removedItem
+  /* ... do something ... */
 });
 ```
 
@@ -433,7 +425,7 @@ When adding animations and effects to make the removal of items more interesting
 This is accomplished by the following line:
 
 ```javascript
-$(this).data('remove-timeout', 1000);
+el.setAttribute('data-remove-timeout', 1000);
 ```
 
 You could also immediately add this to your view, on the `.nested-fields` container (or the `wrapper_class` element you are using).
@@ -445,81 +437,25 @@ You can cancel an action from occurring, either an insertion or removal, within 
 For example:
 
 ```javascript
-  $('#container').on('cocoon:before-insert', function(event, insertedItem) {
-    var confirmation = confirm("Are you sure?");
-    if( confirmation === false ){
-      event.preventDefault();
-    }
-  });
+document.getElementById('container').addEventListener('cocoon:before-insert', event => {
+  const confirmation = confirm("Are you sure?");
+  if ( confirmation === false ) {
+    event.preventDefault();
+  }
+});
 ```
 
 ### Control the Insertion Behaviour
 
-The default insertion location is at the back of the current container. But we have added two `data-` attributes that are read to determine the insertion-node and -method.
+The default insertion location is at the back of the current container. But we have added one `data-` attributes that are read to determine the insertion-node.
+
+The `association-insertion-node` will determine where to add it. You can specify `this`, or the default is the parent-container, if you don't specify anything.
 
 For example:
 
 ```javascript
-$(document).ready(function() {
-    $("#owner a.add_fields").
-      data("association-insertion-method", 'before').
-      data("association-insertion-node", 'this');
-});
+Array.prototype.slice.call(document.querySelectorAll("#owner a.add_fields")).forEach(el => el.setAttribute("association-insertion-node", '#parent_table'));
 ```
-
-The `association-insertion-node` will determine where to add it. You can choose any selector here, or specify this. Also, you can pass a function that returns an arbitrary node. The default is the parent-container, if you don't specify anything.
-
-The `association-insertion-method` will determine where to add it in relation with the node. Any jQuery DOM Manipulation method can be set but we recommend sticking to any of the following: `before`, `after`, `append`, `prepend`. It is unknown at this time what others would do.
-
-The `association-insertion-traversal` will allow node selection to be relative to the link. 
-
-For example:
-
-```javascript
-$(document).ready(function() {
-    $("#owner a.add_fields").
-      data("association-insertion-method", 'append').
-      data("association-insertion-traversal", 'closest').
-      data("association-insertion-node", '#parent_table');
-});
-```
-
-(if you pass `association-insertion-node` as a function, this value will be ignored)
-
-
-Note, if you want to add templates to the specific location which is:
-
-- not a direct parent or sibling of the link
-- the link appears multiple times - for instance, inside a deeply nested form
-
-you need to specify `association-insertion-node` as a function.
-
-
-For example, suppose Task has many SubTasks in the [Example](#examples), and have subtask forms like the following.
-
-```haml
-.row
-  .col-lg-12
-    .add_sub_task= link_to_add_association 'add a new sub task', f, :sub_tasks
-.row
-  .col-lg-12
-    .sub_tasks_form
-      fields_for :sub_tasks do |sub_task_form|
-        = render 'sub_task_fields', f: sub_task_form
-```
-
-Then this will do the thing.
-
-```javascript
-$(document).ready(function() {
-    $(".add_sub_task a").
-      data("association-insertion-method", 'append').
-      data("association-insertion-node", function(link){
-        return link.closest('.row').next('.row').find('.sub_tasks_form')
-      });
-});
-```
-
 
 ### Partial
 

@@ -48,27 +48,14 @@
     return '_' + id + '_$1';
   }
 
-  var getInsertionNodeElem = function(insertionNode, insertionTraversal, el){
-
+  var getInsertionNodeElem = function(insertionNode, el){
     if (!insertionNode){
       return el.parentNode;
     }
 
-    if (typeof insertionNode == 'function'){
-      if(insertionTraversal){
-        console.warn('association-insertion-traversal is ignored, because association-insertion-node is given as a function.')
-      }
-      return insertionNode(el);
+    if (typeof insertionNode == 'string'){
+      return insertionNode == "this" ? el : el.parentNode;
     }
-
-    if(typeof insertionNode == 'string'){
-      if (insertionTraversal){
-        return el[insertionTraversal](insertionNode);
-      }else{
-        return insertionNode == "this" ? el : insertionNode;
-      }
-    }
-
   }
 
   document.addEventListener("click", function(e) {
@@ -81,7 +68,6 @@
         assocs                = add_fields.getAttribute('data-associations'),
         content               = add_fields.getAttribute('data-association-insertion-template'),
         insertionNode         = add_fields.getAttribute('data-association-insertion-node'),
-        insertionTraversal    = add_fields.getAttribute('data-association-insertion-traversal'),
         count                 = parseInt(add_fields.getAttribute('count'), 10),
         regexp_braced         = new RegExp('\\[new_' + assoc + '\\](.*?\\s)', 'g'),
         regexp_underscord     = new RegExp('_new_' + assoc + '_(\\w*)', 'g'),
@@ -111,9 +97,9 @@
       count -= 1;
     }
 
-    var insertionNodeElem = getInsertionNodeElem(insertionNode, insertionTraversal, add_fields)
+    var insertionNodeElem = getInsertionNodeElem(insertionNode, add_fields)
 
-    if( !insertionNodeElem || (insertionNodeElem.length == 0) ){
+    if (!insertionNodeElem) ){
       console.warn("Couldn't find the element to insert the template. Make sure your `data-association-insertion-*` on `link_to_add_association` is correct.")
     }
 
