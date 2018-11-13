@@ -141,7 +141,7 @@
 
     const clicked = remove_fields_dynamic || remove_fields_existing;
 
-    if (clicked) return;
+    if (!clicked) return;
 
     var wrapper_class = clicked.getAttribute('wrapper-class') || 'nested-fields',
         node_to_delete = getNearest(clicked, '.' + wrapper_class),
