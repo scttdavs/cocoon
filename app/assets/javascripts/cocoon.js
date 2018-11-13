@@ -119,7 +119,7 @@
 
     new_contents.forEach(function(node, i) {
       var div = document.createElement('div');
-      div.innerHTML = template;
+      div.innerHTML = node;
       var contentNode = div.firstChild;;
 
       var before_insert = new CustomEvent('cocoon:before-insert', { bubbles: true, detail: { insertedItem: contentNode } });
