@@ -127,7 +127,7 @@
         // allow any of the jquery dom manipulation methods (after, before, append, prepend, etc)
         // to be called on the node.  allows the insertion node to be the parent of the inserted
         // code and doesn't force it to be a sibling like after/before does. default: 'before'
-        insertionNode.insertAdjacentHTML('beforebegin', contentNode);
+        insertionNodeElem.insertAdjacentHTML('beforebegin', contentNode);
 
         insertionNodeElem.dispatchEvent(new CustomEvent('cocoon:after-insert', { insertedItem: contentNode }));
       }
