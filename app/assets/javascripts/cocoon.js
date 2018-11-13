@@ -118,7 +118,9 @@
     }
 
     new_contents.forEach(function(node, i) {
-      var contentNode = node;
+      var div = document.createElement('div');
+      div.innerHTML = template;
+      var contentNode = div.firstChild;;
 
       var before_insert = new CustomEvent('cocoon:before-insert', { bubbles: true, detail: { insertedItem: contentNode } });
       console.log("C. BEFORE", insertionNodeElem, before_insert);
@@ -128,7 +130,9 @@
         // allow any of the jquery dom manipulation methods (after, before, append, prepend, etc)
         // to be called on the node.  allows the insertion node to be the parent of the inserted
         // code and doesn't force it to be a sibling like after/before does. default: 'before'
-        insertionNodeElem.insertAdjacentHTML('beforebegin', contentNode);
+        // insertionNodeElem.insertAdjacentHTML('beforebegin', contentNode);
+        var parent = insertionNodeElem.parentNode;
+        parent.insertBefore(contentNode, insertionNodeElem);
 
         console.log("C. AFTER", insertionNodeElem, new CustomEvent('cocoon:after-insert', { bubbles: true, detail: { insertedItem: contentNode } }));
         insertionNodeElem.dispatchEvent(new CustomEvent('cocoon:after-insert', { bubbles: true, detail: { insertedItem: contentNode } }));
