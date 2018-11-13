@@ -121,6 +121,7 @@
       var contentNode = node;
 
       var before_insert = new CustomEvent('cocoon:before-insert', { insertedItem: contentNode });
+      console.log("C. BEFORE", before_insert);
       insertionNodeElem.dispatchEvent(before_insert);
 
       if (!before_insert.defaultPrevented) {
@@ -129,6 +130,7 @@
         // code and doesn't force it to be a sibling like after/before does. default: 'before'
         insertionNodeElem.insertAdjacentHTML('beforebegin', contentNode);
 
+        console.log("C. AFTER", new CustomEvent('cocoon:after-insert', { insertedItem: contentNode }));
         insertionNodeElem.dispatchEvent(new CustomEvent('cocoon:after-insert', { insertedItem: contentNode }));
       }
     });
